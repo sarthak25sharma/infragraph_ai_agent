@@ -1,7 +1,7 @@
 import os, json, urllib.request
 
 def list_models(api_key: str = "KEY_HERE") -> dict:
-    key = api_key or os.getenv("GOOGLE_API_KEY")
+    key = api_key or os.getenv("GOOGLE_git")
     if not key:
         raise RuntimeError("Missing API key")
 

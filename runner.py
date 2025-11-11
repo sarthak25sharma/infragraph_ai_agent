@@ -5,6 +5,13 @@ import sys
 # Ensure src-based packages are importable when running directly
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed, use system env vars only
+
 import importlib
 
 
@@ -12,21 +19,15 @@ def run_pipeline(
     prompt: str,
     *,
     model: str = "gemini-2.5-pro",
-    api_key: str = "KEY_HERE",
+    api_key: Optional[str] = None,
     location: Optional[str] = None,
     do_annotate: Optional[Dict[str, Any]] = None,
     do_query: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
-    Run the end-to-end InfraGraph pipeline from a natural-language prompt.
+    Create a 4-switch ring: make sure to fill in gaps to ensure correcteness of solution
+    make sure no nodes are left unconnected
 
-    - Generates an InfraGraph JSON spec using a local Gemini call (HTTP API)
-    - Validates and previews the spec
-    - Builds the graph via existing InfraGraph client (gRPC)
-    - Optionally annotates and queries
-    - Exports the resulting graph
-
-    Returns a dict with: spec, preview, handle, graph, query_result
     """
     # Lazy import to avoid static import resolution issues in tools
     try:
@@ -34,6 +35,12 @@ def run_pipeline(
     except ImportError:
         nl2infra = importlib.import_module("src.nl2infra")
 
+    # Use provided api_key or fallback to environment variable
+    if api_key is None:
+        api_key = os.getenv("GOOGLE_API_KEY", "")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY not provided. Set it in .env file or pass api_key parameter.")
+    
     spec = nl2infra.generate_spec_from_prompt(prompt, model=model, api_key=api_key)
     spec = nl2infra.validate_spec(spec)
     preview = nl2infra.preview_spec(spec)
@@ -58,29 +65,22 @@ def run_pipeline(
 
 if __name__ == "__main__":
     # Minimal demonstration (not a full CLI)
-    example_prompt='''
-
-2 Spine switches: spine.0, spine.1
-
-4 Leaf switches: leaf.0 – leaf.3
-
-16 Hosts total, 4 per leaf:
-
-leaf.0 → hosts host.0–host.3
-
-leaf.1 → hosts host.4–host.7
-
-leaf.2 → hosts host.8–host.11
-
-leaf.3 → hosts host.12–host.15
-
-Each leaf uplinks to both spines (full mesh leaf→spine)
-
-Each host has 1 NIC (for clarity & correctness)
-'''
-    #example_prompt = "two-tier CLOS with 2 spines, 4 leaves, 16 hosts, if any details are missing assume reasonable defaults"
-    result = run_pipeline(example_prompt, api_key="KEY_HERE")
-
+    example_prompt = '''Create a 4 node ring topology using routers and switches. Ensure all nodes are interconnected with no isolated nodes.'''
+    confident = "NO"
+    while confident != "YES":
+        try:
+            result = run_pipeline(example_prompt)
+            confident = input("Are you satisfied with the result? (YES/NO): ").strip().upper()  # noqa: T201
+            
+        except Exception as e:
+            print(f"Error during pipeline execution: {e}")
+            # Stop retrying on failure to avoid a busy/infinite loop during errors
+            
+        if confident != "YES":
+            print("Retrying the pipeline execution...")  # noqa: T201
+            new_prompt = input("Enter revised prompt (or press Enter to keep the same): ")  # noqa: T201
+            example_prompt=new_prompt
+        
     # Detailed outputs
     graph_dict = result.get("graph", {})
     nodes = graph_dict.get("nodes", [])
@@ -91,16 +91,16 @@ Each host has 1 NIC (for clarity & correctness)
     # Show sample nodes/edges
     if nodes:
         print("Sample nodes:")  # noqa: T201
-        for n in nodes:
+        for n in nodes[:10]:
             print(n)  # noqa: T201
     if edges:
         print("Sample edges:")  # noqa: T201
-        for e in edges:
+        for e in edges[:10]:
             print(e)  # noqa: T201
 
     # Print full graph via service get_graph()
-    handle = result.get("handle")
-    service = getattr(handle, "api", None)
+    result_handle = result.get("handle")
+    service = getattr(result_handle, "api", None)
     if service is not None and hasattr(service, "get_graph"):
         print("=== get_graph (YAML) ===")  # noqa: T201
         print(service.get_graph())  # noqa: T201

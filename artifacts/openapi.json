@@ -1,0 +1,1214 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "InfraGraph",
+        "description": "### Overview\nInfraGraph or `infrastructure graph` defines a model-driven, vendor-neutral, standard\ninterface for capturing a system of systems suitable for use in co-designing AI/HPC solutions.\n\nThis model allows for defining physical infrastructure as a logical system of systems using graph like terminology.\nIn addition to defining a logical graph, an unlimited number of different physical characteristics\ncan be associated with logical endpoints.\n\n### Graph Terminology\n- an infrastructure `node (vertex)` is the fundamental unit or entity within an infrastructure graph; represented as a endpoint with the following syntax:\n  - a combination of a device instance name and a 0 based index and a component name and a 0 based index such as `switch.0.asic.0` and `switch.0.port.0`\n- an infrastructure `edge` is a combination of two `nodes (endpoints)` in a graph such as (`switch.0.asic.0`, `switch.0.port.0`)\n- `path` is a sequence of edges that allows for traversal through the graph such as [`server.0.npu.0`, `server.0.nic.0`, `switch.0.port.0`, `switch.0.asic.0`]\n\n### Contributions\nContributions to the API and models schema can be made in the following ways:\n- [open an issue](https://github.com/keysight/infragraph/issues) in the models repository\n- [fork the models repository](https://github.com/keysight/infragraph) and submit a PR",
+        "version": "0.5.0",
+        "contact": {
+            "url": "https://github.com/keysight/infragraph/issues"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        }
+    },
+    "servers": [
+        {
+            "url": "/"
+        }
+    ],
+    "paths": {
+        "/set_graph": {
+            "post": {
+                "tags": [
+                    "Configuration"
+                ],
+                "operationId": "set_graph",
+                "x-stream": "client",
+                "description": "Given an infrastructure object this API method will create a fully qualified infrastructure graph and validate it.\n\nCreating a fully qualified infrastructure graph requires the following steps:\n  - process each of the infrastructure instance objects by locating the device and creating a subgraph using the device's edges and substituting the instance name for the device name.\n  - process each of the infrastructure edges, looking up the instance to determine the max count and the name to be substituted for the device and link the subgraphs to create a complete infrastructure graph",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Infrastructure"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Success",
+                        "x-field-uid": 1
+                    },
+                    "default": {
+                        "$ref": "#/components/responses/Failure",
+                        "x-field-uid": 2
+                    }
+                }
+            }
+        },
+        "/get_graph": {
+            "post": {
+                "tags": [
+                    "Configuration"
+                ],
+                "operationId": "get_graph",
+                "x-stream": "client",
+                "description": "This will return the current graph.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GraphRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/GraphResponse",
+                        "x-field-uid": 1
+                    },
+                    "default": {
+                        "$ref": "#/components/responses/Failure",
+                        "x-field-uid": 2
+                    }
+                }
+            }
+        },
+        "/query_graph": {
+            "post": {
+                "tags": [
+                    "Actions"
+                ],
+                "operationId": "query_graph",
+                "x-stream": "client",
+                "description": "Query the current fully expanded graph using a declarative query syntax.\n\n  - example: Ask the graph for specific endpoints such as those of type `NPU` or `NIC`",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/QueryResponse",
+                        "x-field-uid": 1
+                    },
+                    "default": {
+                        "$ref": "#/components/responses/Failure",
+                        "x-field-uid": 2
+                    }
+                }
+            }
+        },
+        "/annotate_graph": {
+            "post": {
+                "tags": [
+                    "Configuration"
+                ],
+                "operationId": "annotate_graph",
+                "x-stream": "client",
+                "description": "Extend the current graph created by the `set_graph` API.\n\n  - example: Update specific endpoints with name/value information such as `rank=0`",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AnnotateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Success",
+                        "x-field-uid": 1
+                    },
+                    "default": {
+                        "$ref": "#/components/responses/Failure",
+                        "x-field-uid": 2
+                    }
+                }
+            }
+        },
+        "/capabilities/version": {
+            "get": {
+                "tags": [
+                    "Capabilities"
+                ],
+                "operationId": "get_version",
+                "responses": {
+                    "200": {
+                        "description": "Version details from API server",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Version"
+                                }
+                            }
+                        },
+                        "x-field-uid": 1
+                    },
+                    "default": {
+                        "$ref": "#/components/responses/Failure",
+                        "x-field-uid": 2
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "responses": {
+            "Success": {
+                "description": "The request has succeeded with no application content but the server\nmay return a list of detailed warnings.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Warning"
+                        }
+                    }
+                }
+            },
+            "Failure": {
+                "description": "The request did not succeed and server has responded with error details.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Error"
+                        }
+                    }
+                }
+            },
+            "GraphResponse": {
+                "description": "The entire fully validated graph content.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/GraphContent"
+                        }
+                    }
+                }
+            },
+            "QueryResponse": {
+                "description": "Answer to the query request.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/QueryResponseContent"
+                        }
+                    }
+                }
+            }
+        },
+        "schemas": {
+            "Infrastructure": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "The name of the infrastructure.\nGlobally unique name of an object. It also serves as the primary key for arrays of objects.",
+                        "x-field-uid": 1,
+                        "type": "string",
+                        "pattern": "^[\\sa-zA-Z0-9-_()><\\[\\]]+$",
+                        "x-unique": "global"
+                    },
+                    "description": {
+                        "description": "A detailed description of the infrastructure.",
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "devices": {
+                        "description": "An inventory of devices and components.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Device"
+                        },
+                        "x-field-uid": 3
+                    },
+                    "links": {
+                        "description": "An inventory of the links present in the infrastructure edges.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Link"
+                        },
+                        "x-field-uid": 4
+                    },
+                    "instances": {
+                        "description": "An inventory of the device instances present in the infrastructure edges.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Instance"
+                        },
+                        "x-field-uid": 5
+                    },
+                    "edges": {
+                        "description": "An array of edge objects used to connect instance devices and components to other instance\ndevices and components. These edge objects are used to form a fully qualified qualified graph.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Infrastructure.Edge"
+                        },
+                        "x-field-uid": 6
+                    }
+                }
+            },
+            "Device": {
+                "description": "A subgraph container for a device and its components, links and edges.\nThe edges form a subgraph of the device.",
+                "type": "object",
+                "required": [
+                    "name",
+                    "components",
+                    "links",
+                    "edges"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "The name of the device being described.\nGlobally unique name of an object. It also serves as the primary key for arrays of objects.",
+                        "x-field-uid": 1,
+                        "type": "string",
+                        "pattern": "^[\\sa-zA-Z0-9-_()><\\[\\]]+$",
+                        "x-unique": "global"
+                    },
+                    "description": {
+                        "description": "A description of the device.\nThis will not be used in Infrastructure.connections.",
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "components": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Component"
+                        },
+                        "x-field-uid": 3
+                    },
+                    "links": {
+                        "description": "All the links that make up this device.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Link"
+                        },
+                        "x-field-uid": 4
+                    },
+                    "edges": {
+                        "description": "An array of edges that are used to produce a device graph.\nThese are used to connect components to each other or components\nto other device components (composability).\nThe generated graph edges will be fully qualified using the count property\nof the device and component and slice notation of each endpoint in the edge object.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Device.Edge"
+                        },
+                        "x-field-uid": 5
+                    }
+                }
+            },
+            "Component.Custom": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object",
+                "required": [
+                    "type"
+                ],
+                "properties": {
+                    "type": {
+                        "description": "This property will be added to the graph node in the form of a `type = value` attribute.",
+                        "type": "string",
+                        "x-field-uid": 1
+                    }
+                }
+            },
+            "Component.Device": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object"
+            },
+            "Component.Cpu": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object"
+            },
+            "Component.Npu": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object"
+            },
+            "Component.Nic": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object"
+            },
+            "Component.Memory": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object"
+            },
+            "Component.Port": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object"
+            },
+            "Component.Switch": {
+                "description": "Placeholder for a component that can be extended.",
+                "type": "object"
+            },
+            "Component": {
+                "description": "A container for describing a component.\nA Component is contained in a Device.",
+                "type": "object",
+                "required": [
+                    "name",
+                    "count",
+                    "choice"
+                ],
+                "properties": {
+                    "name": {
+                        "x-field-uid": 1,
+                        "description": "Globally unique name of an object. It also serves as the primary key for arrays of objects.",
+                        "type": "string",
+                        "pattern": "^[\\sa-zA-Z0-9-_()><\\[\\]]+$",
+                        "x-unique": "global"
+                    },
+                    "description": {
+                        "description": "A description of the component.",
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "count": {
+                        "description": "The maxiumim number of this component that will be contained by a single device instance.\nThis property is used by the infragraph service in edge generation.",
+                        "type": "integer",
+                        "format": "int32",
+                        "x-field-uid": 3
+                    },
+                    "choice": {
+                        "description": "The type of component.\n\nThe `choice` value will be added to the graph node in the form of a `type = value` attribute.\n\n- `custom` If the type of a component is not listed as a choice it can be defined using the custom object which includes a type property that allows for a custom type attribute on the graph node.\n- `device` This enum allows a device to be composed of other devices. When this enum is selected the name of the component MUST be the name of a device that exists in the Infrastructure.devices array.\n- `cpu` A high level definition for a cpu\n- `npu` A high level definition for a neural processing unit\n- `nic` A high level definition for a network interface card, for more detailed breakdowns create a device representing a specific type network interface card\n- `memory` A high level definition for memory\n- `port` A high level definitiion for an IO port\n- `switch` A high level definition for an internal switch connecting components",
+                        "type": "string",
+                        "x-field-uid": 4,
+                        "x-enum": {
+                            "custom": {
+                                "x-field-uid": 1
+                            },
+                            "device": {
+                                "x-field-uid": 2
+                            },
+                            "cpu": {
+                                "x-field-uid": 3
+                            },
+                            "npu": {
+                                "x-field-uid": 4
+                            },
+                            "nic": {
+                                "x-field-uid": 5
+                            },
+                            "memory": {
+                                "x-field-uid": 6
+                            },
+                            "port": {
+                                "x-field-uid": 7
+                            },
+                            "switch": {
+                                "x-field-uid": 8
+                            }
+                        },
+                        "enum": [
+                            "custom",
+                            "device",
+                            "cpu",
+                            "npu",
+                            "nic",
+                            "memory",
+                            "port",
+                            "switch"
+                        ]
+                    },
+                    "custom": {
+                        "$ref": "#/components/schemas/Component.Custom",
+                        "x-field-uid": 10
+                    },
+                    "device": {
+                        "$ref": "#/components/schemas/Component.Device",
+                        "x-field-uid": 11
+                    },
+                    "cpu": {
+                        "$ref": "#/components/schemas/Component.Cpu",
+                        "x-field-uid": 12
+                    },
+                    "npu": {
+                        "$ref": "#/components/schemas/Component.Npu",
+                        "x-field-uid": 13
+                    },
+                    "nic": {
+                        "$ref": "#/components/schemas/Component.Nic",
+                        "x-field-uid": 14
+                    },
+                    "memory": {
+                        "$ref": "#/components/schemas/Component.Memory",
+                        "x-field-uid": 15
+                    },
+                    "port": {
+                        "$ref": "#/components/schemas/Component.Port",
+                        "x-field-uid": 16
+                    },
+                    "switch": {
+                        "$ref": "#/components/schemas/Component.Switch",
+                        "x-field-uid": 17
+                    }
+                }
+            },
+            "Link.Physical.Bandwidth": {
+                "description": "A container for specific Link physical Properties.",
+                "type": "object",
+                "properties": {
+                    "choice": {
+                        "type": "string",
+                        "x-field-uid": 1,
+                        "x-enum": {
+                            "gigabits_per_second": {
+                                "x-field-uid": 1
+                            },
+                            "gigabytes_per_second": {
+                                "x-field-uid": 2
+                            },
+                            "gigatransfers_per_second": {
+                                "x-field-uid": 3
+                            }
+                        },
+                        "enum": [
+                            "gigabits_per_second",
+                            "gigabytes_per_second",
+                            "gigatransfers_per_second"
+                        ]
+                    },
+                    "gigabits_per_second": {
+                        "description": "Gigabits per second.",
+                        "type": "number",
+                        "x-field-uid": 2
+                    },
+                    "gigabytes_per_second": {
+                        "description": "Gigabytes per second.",
+                        "type": "number",
+                        "x-field-uid": 3
+                    },
+                    "gigatransfers_per_second": {
+                        "description": "Gigatrasfers per second.",
+                        "type": "number",
+                        "x-field-uid": 4
+                    }
+                }
+            },
+            "Link.Physical.Latency": {
+                "description": "A container for specific Link latency properties.",
+                "type": "object",
+                "properties": {
+                    "choice": {
+                        "type": "string",
+                        "x-field-uid": 1,
+                        "x-enum": {
+                            "ms": {
+                                "x-field-uid": 1
+                            },
+                            "us": {
+                                "x-field-uid": 2
+                            },
+                            "ns": {
+                                "x-field-uid": 3
+                            }
+                        },
+                        "enum": [
+                            "ms",
+                            "us",
+                            "ns"
+                        ]
+                    },
+                    "ms": {
+                        "description": "Latency in milliseconds",
+                        "type": "number",
+                        "x-field-uid": 2
+                    },
+                    "us": {
+                        "description": "Latency in microseconds.",
+                        "type": "number",
+                        "x-field-uid": 3
+                    },
+                    "ns": {
+                        "description": "Latency in nanoseconds.",
+                        "type": "number",
+                        "x-field-uid": 4
+                    }
+                }
+            },
+            "Link.Physical": {
+                "type": "object",
+                "properties": {
+                    "bandwidth": {
+                        "$ref": "#/components/schemas/Link.Physical.Bandwidth",
+                        "x-field-uid": 1
+                    },
+                    "latency": {
+                        "$ref": "#/components/schemas/Link.Physical.Latency",
+                        "x-field-uid": 2
+                    }
+                }
+            },
+            "Link": {
+                "description": "A container for describing a link used between components.",
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "x-field-uid": 1,
+                        "description": "Globally unique name of an object. It also serves as the primary key for arrays of objects.",
+                        "type": "string",
+                        "pattern": "^[\\sa-zA-Z0-9-_()><\\[\\]]+$",
+                        "x-unique": "global"
+                    },
+                    "description": {
+                        "description": "A description of the type of link.",
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "physical": {
+                        "description": "A container for physical properties.",
+                        "$ref": "#/components/schemas/Link.Physical",
+                        "x-field-uid": 3
+                    }
+                }
+            },
+            "Device.Endpoint": {
+                "type": "object",
+                "required": [
+                    "component"
+                ],
+                "properties": {
+                    "device": {
+                        "description": "An optional name of a device that contains the component.\nIf the property is empty the name of the device is the parent of the edge object.\nAn endpoint will be generated for every device based on the count.",
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "component": {
+                        "description": "The name of a component that exists in the containing device\nand the indexes of the component.\n\nThe indexes MUST be specified using python slice notation.\n  - example: cx5[0:2]",
+                        "type": "string",
+                        "x-field-uid": 2
+                    }
+                }
+            },
+            "Infrastructure.Endpoint": {
+                "type": "object",
+                "required": [
+                    "instance",
+                    "component"
+                ],
+                "properties": {
+                    "instance": {
+                        "description": "A name that matches the Instance.name property of an instance object that MUST exist in the infrastructure instances array.\n\nThe instance object yields:\n  - a device name that contains the component and MUST exist in the infrastructure devices\n  - a count that is the maximum to be used in the slice notation\n\nThe indexes MUST be specified using python slice notation.\n  - example: host[0:2]",
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "component": {
+                        "description": "The name of a component that MUST exist in the Instance.device specified by the instance object in the Infrastructure.instances array.\n\nThe indexes MUST be specified using python slice notation.\n  - example: npu[0:2]",
+                        "type": "string",
+                        "x-field-uid": 2
+                    }
+                }
+            },
+            "Infrastructure.Edge": {
+                "type": "object",
+                "required": [
+                    "ep1",
+                    "ep2",
+                    "link"
+                ],
+                "properties": {
+                    "ep1": {
+                        "description": "A device and component that is one endpoint of the edge",
+                        "$ref": "#/components/schemas/Infrastructure.Endpoint",
+                        "x-field-uid": 1
+                    },
+                    "ep2": {
+                        "description": "A device and component that is the other endpoint of the edge",
+                        "required": [
+                            "device",
+                            "component"
+                        ],
+                        "$ref": "#/components/schemas/Infrastructure.Endpoint",
+                        "x-field-uid": 2
+                    },
+                    "scheme": {
+                        "x-field-uid": 3,
+                        "description": "The scheme that will be used to create edges between the endpoints ep1 and ep2.",
+                        "type": "string",
+                        "x-enum": {
+                            "one2one": {
+                                "x-field-uid": 1
+                            },
+                            "many2many": {
+                                "x-field-uid": 2
+                            },
+                            "ring": {
+                                "x-field-uid": 3
+                            }
+                        },
+                        "enum": [
+                            "one2one",
+                            "many2many",
+                            "ring"
+                        ]
+                    },
+                    "link": {
+                        "description": "The name of a link that defines additional characteristics of the edge.\nThe name MUST exist in the links array of the infrastructure.",
+                        "type": "string",
+                        "x-field-uid": 4
+                    }
+                }
+            },
+            "Device.Edge": {
+                "type": "object",
+                "required": [
+                    "ep1",
+                    "ep2",
+                    "link"
+                ],
+                "properties": {
+                    "ep1": {
+                        "description": "An optional device and component that is the other endpoint of the edge",
+                        "$ref": "#/components/schemas/Device.Endpoint",
+                        "x-field-uid": 1
+                    },
+                    "ep2": {
+                        "description": "An optional device and component that is the other endpoint of the edge",
+                        "$ref": "#/components/schemas/Device.Endpoint",
+                        "x-field-uid": 2
+                    },
+                    "scheme": {
+                        "x-field-uid": 3,
+                        "description": "The scheme that will be used to create edges between the endpoints ep1 and ep2.",
+                        "type": "string",
+                        "x-enum": {
+                            "one2one": {
+                                "x-field-uid": 1
+                            },
+                            "many2many": {
+                                "x-field-uid": 2
+                            },
+                            "ring": {
+                                "x-field-uid": 3
+                            }
+                        },
+                        "enum": [
+                            "one2one",
+                            "many2many",
+                            "ring"
+                        ]
+                    },
+                    "link": {
+                        "description": "The name of a link that defines additional characteristics of the edge.\nThe name MUST exist in the links array of the containing device.",
+                        "type": "string",
+                        "x-field-uid": 4
+                    }
+                }
+            },
+            "Instance": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "device",
+                    "count"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "An alias for the device that MUST be used in the Infrastructure edge object.\nGlobally unique name of an object. It also serves as the primary key for arrays of objects.",
+                        "x-field-uid": 1,
+                        "type": "string",
+                        "pattern": "^[\\sa-zA-Z0-9-_()><\\[\\]]+$",
+                        "x-unique": "global"
+                    },
+                    "description": {
+                        "description": "A description of the instance.",
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "device": {
+                        "description": "The name of a device that MUST exist in the array of Infrastructure devices.",
+                        "type": "string",
+                        "x-field-uid": 3
+                    },
+                    "count": {
+                        "description": "The maximum number of instances that will be created as nodes in the graph.\n\nNot all the instances need to be used in the graph edges.",
+                        "type": "integer",
+                        "format": "int32",
+                        "x-field-uid": 4
+                    }
+                }
+            },
+            "Error": {
+                "description": "Error response generated while serving API request.",
+                "type": "object",
+                "required": [
+                    "code",
+                    "errors"
+                ],
+                "properties": {
+                    "code": {
+                        "description": "Numeric status code based on the underlying transport being used.\nThe API server MUST set this code explicitly based on following references:\n  - HTTP 4xx errors: https://datatracker.ietf.org/doc/html/rfc9110#section-15.5\n  - HTTP 5xx errors: https://datatracker.ietf.org/doc/html/rfc9110#section-15.6\n  - gRPC errors: https://grpc.github.io/grpc/core/md_doc_statuscodes.html",
+                        "type": "integer",
+                        "format": "int32",
+                        "x-field-uid": 1
+                    },
+                    "kind": {
+                        "description": "Classification of error originating from within API server that may not be mapped to the value in `code`.\nAbsence of this field may indicate that the error did not originate from within API server.",
+                        "type": "string",
+                        "x-enum": {
+                            "validation": {
+                                "x-field-uid": 1
+                            },
+                            "internal": {
+                                "x-field-uid": 2
+                            }
+                        },
+                        "x-field-uid": 2,
+                        "enum": [
+                            "validation",
+                            "internal"
+                        ]
+                    },
+                    "errors": {
+                        "description": "List of error messages generated while executing the request.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "x-field-uid": 3
+                    }
+                }
+            },
+            "Warning": {
+                "description": "A list of warnings that have occurred while executing the request.",
+                "type": "object",
+                "properties": {
+                    "warnings": {
+                        "description": "A list of any system specific warnings that have occurred while\nexecuting the request.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "x-field-uid": 1
+                    }
+                }
+            },
+            "GraphRequest": {
+                "type": "object",
+                "properties": {
+                    "format": {
+                        "description": "The format that the graph will be returned in.",
+                        "type": "string",
+                        "x-field-uid": 1,
+                        "x-enum": {
+                            "networkx": {
+                                "x-field-uid": 1
+                            }
+                        },
+                        "enum": [
+                            "networkx"
+                        ]
+                    }
+                }
+            },
+            "GraphContent": {
+                "type": "object",
+                "properties": {
+                    "choice": {
+                        "type": "string",
+                        "x-field-uid": 1,
+                        "x-enum": {
+                            "networkx": {
+                                "x-field-uid": 1
+                            }
+                        },
+                        "enum": [
+                            "networkx"
+                        ]
+                    },
+                    "networkx": {
+                        "description": "This contains the returned graph content formatted as a networkx yaml string.",
+                        "type": "string",
+                        "x-field-uid": 2
+                    }
+                }
+            },
+            "Annotation.Node": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "A fully qualified node name that MUST exist in the graph.\n- server.0.npu.0\n- server.6.nic.3\n- switch.2.asic.0",
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "attribute": {
+                        "description": "The attribute name that will be added to the endpoint.",
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "value": {
+                        "description": "The attribute value that will be added to the endpoint.",
+                        "type": "string",
+                        "x-field-uid": 3
+                    }
+                }
+            },
+            "Annotation.Edge": {
+                "type": "object",
+                "properties": {
+                    "ep1": {
+                        "description": "A fully qualified endpoint name that MUST exist as part of an edge along with ep2 in the graph.\n- server.0.npu.0\n- server.6.nic.3\n- switch.2.asic.0",
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "ep2": {
+                        "description": "A fully qualified endpoint name that MUST exist as part of an edge along with ep1 in the graph.\n- server.0.npu.0\n- server.6.nic.3\n- switch.2.asic.0",
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "attribute": {
+                        "description": "The attribute name that will be added to the edge.",
+                        "type": "string",
+                        "x-field-uid": 3
+                    },
+                    "value": {
+                        "description": "The attribute value that will be added to the edge.",
+                        "type": "string",
+                        "x-field-uid": 4
+                    }
+                }
+            },
+            "AnnotateRequest": {
+                "type": "object",
+                "properties": {
+                    "choice": {
+                        "type": "string",
+                        "x-field-uid": 1,
+                        "x-enum": {
+                            "nodes": {
+                                "x-field-uid": 1
+                            },
+                            "edges": {
+                                "x-field-uid": 2
+                            }
+                        },
+                        "enum": [
+                            "nodes",
+                            "edges"
+                        ]
+                    },
+                    "nodes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Annotation.Node"
+                        },
+                        "x-field-uid": 2
+                    },
+                    "edges": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Annotation.Edge"
+                        },
+                        "x-field-uid": 3
+                    }
+                }
+            },
+            "NameValue": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "value": {
+                        "type": "string",
+                        "x-field-uid": 2
+                    }
+                }
+            },
+            "QueryResponseItem": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/NameValue"
+                        },
+                        "x-field-uid": 2
+                    }
+                }
+            },
+            "QueryShortestPathItem": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "nodes"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "Name of the shortest path filter",
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "nodes": {
+                        "description": "An array of node ids that make up the shortest path",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "x-field-uid": 2
+                    }
+                }
+            },
+            "QueryResponseContent": {
+                "type": "object",
+                "properties": {
+                    "choice": {
+                        "type": "string",
+                        "x-enum": {
+                            "node_matches": {
+                                "x-field-uid": 1
+                            },
+                            "shortest_path_matches": {
+                                "x-field-uid": 2
+                            }
+                        },
+                        "x-field-uid": 1,
+                        "enum": [
+                            "node_matches",
+                            "shortest_path_matches"
+                        ]
+                    },
+                    "node_matches": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QueryResponseItem"
+                        },
+                        "x-field-uid": 2
+                    },
+                    "shortest_path_matches": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QueryShortestPathItem"
+                        },
+                        "x-field-uid": 3
+                    }
+                }
+            },
+            "QueryAttribute": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "operator": {
+                        "type": "string",
+                        "x-field-uid": 2,
+                        "x-enum": {
+                            "eq": {
+                                "x-field-uid": 1
+                            },
+                            "regex": {
+                                "x-field-uid": 2
+                            },
+                            "contains": {
+                                "x-field-uid": 3
+                            }
+                        },
+                        "enum": [
+                            "eq",
+                            "regex",
+                            "contains"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "x-field-uid": 3
+                    },
+                    "logic": {
+                        "type": "string",
+                        "x-field-uid": 4,
+                        "x-enum": {
+                            "and": {
+                                "x-field-uid": 1
+                            },
+                            "or": {
+                                "x-field-uid": 2
+                            }
+                        },
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                }
+            },
+            "QueryNodeId": {
+                "type": "object",
+                "properties": {
+                    "operator": {
+                        "type": "string",
+                        "x-field-uid": 1,
+                        "x-enum": {
+                            "eq": {
+                                "x-field-uid": 1
+                            },
+                            "regex": {
+                                "x-field-uid": 2
+                            },
+                            "contains": {
+                                "x-field-uid": 3
+                            }
+                        },
+                        "enum": [
+                            "eq",
+                            "regex",
+                            "contains"
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "logic": {
+                        "type": "string",
+                        "x-field-uid": 3,
+                        "x-enum": {
+                            "and": {
+                                "x-field-uid": 1
+                            },
+                            "or": {
+                                "x-field-uid": 2
+                            }
+                        },
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                }
+            },
+            "QueryNodeFilter": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "choice": {
+                        "type": "string",
+                        "x-field-uid": 2,
+                        "x-enum": {
+                            "attribute_filter": {
+                                "x-field-uid": 1
+                            },
+                            "id_filter": {
+                                "x-field-uid": 2
+                            }
+                        },
+                        "enum": [
+                            "attribute_filter",
+                            "id_filter"
+                        ]
+                    },
+                    "attribute_filter": {
+                        "$ref": "#/components/schemas/QueryAttribute",
+                        "x-field-uid": 3
+                    },
+                    "id_filter": {
+                        "$ref": "#/components/schemas/QueryNodeId",
+                        "x-field-uid": 4
+                    }
+                }
+            },
+            "QueryShortestPathFilter": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "source",
+                    "destination"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "x-field-uid": 1
+                    },
+                    "source": {
+                        "type": "string",
+                        "x-field-uid": 2
+                    },
+                    "destination": {
+                        "type": "string",
+                        "x-field-uid": 3
+                    }
+                }
+            },
+            "QueryRequest": {
+                "type": "object",
+                "properties": {
+                    "choice": {
+                        "type": "string",
+                        "x-field-uid": 1,
+                        "x-enum": {
+                            "node_filters": {
+                                "x-field-uid": 1
+                            },
+                            "shortest_path_filters": {
+                                "x-field-uid": 2
+                            }
+                        },
+                        "enum": [
+                            "node_filters",
+                            "shortest_path_filters"
+                        ]
+                    },
+                    "node_filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QueryNodeFilter"
+                        },
+                        "x-field-uid": 2
+                    },
+                    "shortest_path_filters": {
+                        "description": "Under Review: Proposal to abstract the shortest path interface to the graph.\n\nAdd shortest path filters to retrive the shortest path between source and destination nodes",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QueryShortestPathFilter"
+                        },
+                        "x-field-uid": 3,
+                        "x-status": {
+                            "status": "under_review",
+                            "information": "Proposal to abstract the shortest path interface to the graph."
+                        }
+                    }
+                }
+            },
+            "Version": {
+                "description": "Version details",
+                "type": "object",
+                "properties": {
+                    "api_spec_version": {
+                        "description": "Version of API specification",
+                        "type": "string",
+                        "default": "",
+                        "x-field-uid": 1
+                    },
+                    "sdk_version": {
+                        "description": "Version of SDK generated from API specification",
+                        "type": "string",
+                        "default": "",
+                        "x-field-uid": 2
+                    },
+                    "app_version": {
+                        "description": "Version of application consuming or serving the API",
+                        "type": "string",
+                        "default": "",
+                        "x-field-uid": 3
+                    }
+                }
+            }
+        }
+    }
+}
