@@ -2,18 +2,23 @@ import json
 import os
 import urllib.request
 import urllib.error
+from typing import Optional
 
 from .spec_models import validate_spec
 
 
-def _gemini_generate(prompt: str, *, model: str = "gemini-2.5-pro", api_key: str = "") -> str:
-    # Prefer explicit api_key argument; fallback to environment variable
+def _gemini_generate(prompt: str, *, model: Optional[str] = None, api_key: str = "") -> str:
+    # Resolve API key
     key = api_key or os.getenv("GOOGLE_API_KEY", "")
     if not key:
-        raise RuntimeError(
-            "Gemini API key not provided. Set GOOGLE_API_KEY env var or pass api_key."
-        )
-    url = f"https://generativelanguage.googleapis.com/v1/models/{model}:generateContent?key={key}"
+        raise RuntimeError("Gemini API key not provided. Set GOOGLE_API_KEY in your .env or pass api_key.")
+
+    # Resolve model strictly from parameter or GEMINI_MODEL env var
+    resolved_model = model or os.getenv("GEMINI_MODEL", "")
+    if not resolved_model:
+        raise RuntimeError("Gemini model not provided. Set GEMINI_MODEL in your .env (e.g., gemini-2.5-flash).")
+
+    url = f"https://generativelanguage.googleapis.com/v1/models/{resolved_model}:generateContent?key={key}"
 
     payload = {
         "contents": [
@@ -52,65 +57,238 @@ def _gemini_generate(prompt: str, *, model: str = "gemini-2.5-pro", api_key: str
 
 
 def _build_system_prompt(schema_description: str, fewshots: str) -> str:
-    return (
-        "You convert a natural-language topology description into a STRICT JSON object "
-        "that conforms to the InfraGraph subset schema described below.\n\n"
-        "Rules:\n"
-        "- Output ONLY JSON.\n"
-        "- No backticks, no prose.\n"
-        "- Fill required fields; omit unknowns.\n\n"
-        f"Schema (subset):\n{schema_description}\n\n"
-        f"Examples:\n{fewshots}\n\n"
-        "Now output ONLY the JSON for the user's request."
-    )
+    return f"""
+    You are a **strict schema-to-JSON translator**.
+
+    Your task: Convert the user's natural language topology description into JSON that **exactly follows the schema** provided below. The shcema 
+    follows infragraph rules any syntax. THere should be no deviation from the schema
+
+    ### **CRITICAL GENERATION RULES**
+    1. **Output ONLY JSON.**
+    2. **Do NOT add comments, explanations, backticks, markdown, or extra text.**
+    3. **Every key in the schema must follow the schema
+    4. **If the user description does NOT specify a value, set that field to `null` or an empty list `[]` depending on its schema type or if the shcema needs it you must add some default vlue which will ensure that the schema is followed there might be some deviation in the answer but schema must be followed .**
+    5. **Never add fields that are not in the schema.**
+    6. **Never change key names. No synonyms. No rewording.**
+    7. **Follow the examples EXACTLY in style, structure, spacing, and ordering of fields.**
+    8. If the input is ambiguous, choose the **minimum assumption** (do not create extra nodes or connections).
+
+    ### **Schema (authoritative; follow exactly)**
+    {schema_description}
+
+    ### **Few-Shot Examples (follow formatting exactly)**
+    {fewshots}
+
+    ### **Final Instruction**
+    Return ONLY the JSON object. No prose, no notes, no markup.
+    """
 
 
 def _schema_description() -> str:
     return (
-        "{\n"
-        "  \"infrastructure\": {\n"
-        "    \"name\": string,\n"
-        "    \"devices\": [ { \"id\": string, \"type\": string, \"role\": string } ],\n"
-        "    \"links\": [ { \"src\": string, \"dst\": string } ]\n"
-        "  }\n"
-        "}"
+        ''' 
+{
+  "name": "string",
+  "description": "string",
+  "devices": [
+    {
+      "name": "string",
+      "description": "string",
+      "components": [
+        {
+          "name": "string",
+          "description": "string",
+          "count": 0,
+          "choice": "custom",
+          "custom": {
+            "type": "string"
+          },
+          "device": {},
+          "cpu": {},
+          "npu": {},
+          "nic": {},
+          "memory": {},
+          "port": {},
+          "switch": {}
+        }
+      ],
+      "links": [
+        {
+          "name": "string",
+          "description": "string",
+          "physical": {
+            "bandwidth": {
+              "choice": "gigabits_per_second",
+              "gigabits_per_second": 0,
+              "gigabytes_per_second": 0,
+              "gigatransfers_per_second": 0
+            },
+            "latency": {
+              "choice": "ms",
+              "ms": 0,
+              "us": 0,
+              "ns": 0
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "ep1": {
+            "device": "string",
+            "component": "string"
+          },
+          "ep2": {
+            "device": "string",
+            "component": "string"
+          },
+          "scheme": "one2one",
+          "link": "string"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "name": "string",
+      "description": "string",
+      "physical": {
+        "bandwidth": {
+          "choice": "gigabits_per_second",
+          "gigabits_per_second": 0,
+          "gigabytes_per_second": 0,
+          "gigatransfers_per_second": 0
+        },
+        "latency": {
+          "choice": "ms",
+          "ms": 0,
+          "us": 0,
+          "ns": 0
+        }
+      }
+    }
+  ],
+  "instances": [
+    {
+      "name": "string",
+      "description": "string",
+      "device": "string",
+      "count": 0
+    }
+  ],
+  "edges": [
+    {
+      "ep1": {
+        "instance": "string",
+        "component": "string"
+      },
+      "ep2": {
+        "instance": "string",
+        "component": "string"
+      },
+      "scheme": "one2one",
+      "link": "string"
+    }
+  ]
+}'''
     )
-
 
 def _fewshot_examples() -> str:
     return (
-        "User: two-tier clos with 2 spines, 4 leaves, 16 hosts\n"
+        "User: Create a ring of 4 routers.\n"
         "Assistant:\n"
         "{\n"
-        "  \"infrastructure\": {\n"
-        "    \"name\": \"two_tier_clos\",\n"
-        "    \"devices\": [\n"
-        "      {\"id\": \"spine1\", \"type\": \"switch\", \"role\": \"spine\"},\n"
-        "      {\"id\": \"spine2\", \"type\": \"switch\", \"role\": \"spine\"},\n"
-        "      {\"id\": \"leaf1\", \"type\": \"switch\", \"role\": \"leaf\"},\n"
-        "      {\"id\": \"leaf2\", \"type\": \"switch\", \"role\": \"leaf\"},\n"
-        "      {\"id\": \"leaf3\", \"type\": \"switch\", \"role\": \"leaf\"},\n"
-        "      {\"id\": \"leaf4\", \"type\": \"switch\", \"role\": \"leaf\"}\n"
-        "    ],\n"
-        "    \"links\": [\n"
-        "      {\"src\": \"spine1\", \"dst\": \"leaf1\"},\n"
-        "      {\"src\": \"spine1\", \"dst\": \"leaf2\"},\n"
-        "      {\"src\": \"spine1\", \"dst\": \"leaf3\"},\n"
-        "      {\"src\": \"spine1\", \"dst\": \"leaf4\"},\n"
-        "      {\"src\": \"spine2\", \"dst\": \"leaf1\"},\n"
-        "      {\"src\": \"spine2\", \"dst\": \"leaf2\"},\n"
-        "      {\"src\": \"spine2\", \"dst\": \"leaf3\"},\n"
-        "      {\"src\": \"spine2\", \"dst\": \"leaf4\"}\n"
-        "    ]\n"
-        "  }\n"
-        "}"
+        '  "devices": [\n'
+        '    {\n'
+        '      "id": "router.0",\n'
+        '      "type": "router",\n'
+        '      "components": [\n'
+        '        {\n'
+        '          "name": "port.0",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.1", "target_component": "port.0"}\n'
+        '          ]\n'
+        '        },\n'
+        '        {\n'
+        '          "name": "port.1",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.3", "target_component": "port.1"}\n'
+        '          ]\n'
+        '        }\n'
+        '      ]\n'
+        '    },\n'
+        '    {\n'
+        '      "id": "router.1",\n'
+        '      "type": "router",\n'
+        '      "components": [\n'
+        '        {\n'
+        '          "name": "port.0",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.0", "target_component": "port.0"}\n'
+        '          ]\n'
+        '        },\n'
+        '        {\n'
+        '          "name": "port.1",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.2", "target_component": "port.1"}\n'
+        '          ]\n'
+        '        }\n'
+        '      ]\n'
+        '    },\n'
+        '    {\n'
+        '      "id": "router.2",\n'
+        '      "type": "router",\n'
+        '      "components": [\n'
+        '        {\n'
+        '          "name": "port.0",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.1", "target_component": "port.0"}\n'
+        '          ]\n'
+        '        },\n'
+        '        {\n'
+        '          "name": "port.1",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.3", "target_component": "port.1"}\n'
+        '          ]\n'
+        '        }\n'
+        '      ]\n'
+        '    },\n'
+        '    {\n'
+        '      "id": "router.3",\n'
+        '      "type": "router",\n'
+        '      "components": [\n'
+        '        {\n'
+        '          "name": "port.0",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.2", "target_component": "port.0"}\n'
+        '          ]\n'
+        '        },\n'
+        '        {\n'
+        '          "name": "port.1",\n'
+        '          "type": "interface",\n'
+        '          "connections": [\n'
+        '            {"target_device": "router.0", "target_component": "port.1"}\n'
+        '          ]\n'
+        '        }\n'
+        '      ]\n'
+        '    }\n'
+        '  ]\n'
+        '}\n'
     )
+
 
 
 def generate_spec_from_prompt(
     prompt: str,
     *,
-    model: str = "gemini-2.5-pro",
+    model: Optional[str] = None,
     temperature: float = 0.2,
     api_key: str = "",
 ) -> dict:
@@ -118,22 +296,8 @@ def generate_spec_from_prompt(
     system = _build_system_prompt(_schema_description(), _fewshot_examples())
     full_prompt = f"{system}\n\nUser request: {prompt}\nReturn ONLY JSON."
 
-    # First attempt
-    try:
-        raw = _gemini_generate(full_prompt, model=model, api_key=api_key)
-    except RuntimeError as e:
-        # Retry with common aliases if 404 Model not found
-        msg = str(e)
-        raw = None
-        if "404" in msg or "not found" in msg.lower():
-            for alt in ("gemini-1.5-flash", "gemini-1.5-flash-001"):
-                try:
-                    raw = _gemini_generate(full_prompt, model=alt, api_key=api_key)
-                    break
-                except RuntimeError:
-                    continue
-        if raw is None:
-            raise
+    # First attempt (strictly use provided model or GEMINI_MODEL from env)
+    raw = _gemini_generate(full_prompt, model=model, api_key=api_key)
     # Try to parse JSON directly; if that fails, try to extract JSON substring
     def _extract_json(text: str):
         try:

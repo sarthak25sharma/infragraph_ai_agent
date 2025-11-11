@@ -1,7 +1,12 @@
 import os, json, urllib.request
+import os
+import sys
+
+# Ensure src-based packages are importable when running directly
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 def list_models(api_key: str = "KEY_HERE") -> dict:
-    key = api_key or os.getenv("GOOGLE_git")
+    key = os.getenv("GOOGLE_API_KEY")
     if not key:
         raise RuntimeError("Missing API key")
 
