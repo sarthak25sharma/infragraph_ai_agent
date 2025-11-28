@@ -1,0 +1,132 @@
+=== Topology Summary ===
+Nodes: 16 | Edges: 8
+Sample nodes:
+{'device': 'n00', 'id': 'instance_n00.0.port0.0', 'instance': 'instance_n00', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n00', 'id': 'instance_n00.0.port1.0', 'instance': 'instance_n00', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n00', 'id': 'instance_n00.0.port2.0', 'instance': 'instance_n00', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n00', 'id': 'instance_n00.0.port3.0', 'instance': 'instance_n00', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n01', 'id': 'instance_n01.0.port0.0', 'instance': 'instance_n01', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n01', 'id': 'instance_n01.0.port1.0', 'instance': 'instance_n01', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n01', 'id': 'instance_n01.0.port2.0', 'instance': 'instance_n01', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n01', 'id': 'instance_n01.0.port3.0', 'instance': 'instance_n01', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n10', 'id': 'instance_n10.0.port0.0', 'instance': 'instance_n10', 'instance_idx': 0, 'type': 'switch'}
+{'device': 'n10', 'id': 'instance_n10.0.port1.0', 'instance': 'instance_n10', 'instance_idx': 0, 'type': 'switch'}
+Sample edges:
+{'link': 'link_n01_port1_n00_port0', 'source': 'instance_n00.0.port0.0', 'target': 'instance_n01.0.port1.0'}
+{'link': 'link_n01_port0_n00_port1', 'source': 'instance_n00.0.port1.0', 'target': 'instance_n01.0.port0.0'}
+{'link': 'link_n10_port3_n00_port2', 'source': 'instance_n00.0.port2.0', 'target': 'instance_n10.0.port3.0'}
+{'link': 'link_n10_port2_n00_port3', 'source': 'instance_n00.0.port3.0', 'target': 'instance_n10.0.port2.0'}
+{'link': 'link_n11_port3_n01_port2', 'source': 'instance_n01.0.port2.0', 'target': 'instance_n11.0.port3.0'}
+{'link': 'link_n11_port2_n01_port3', 'source': 'instance_n01.0.port3.0', 'target': 'instance_n11.0.port2.0'}
+{'link': 'link_n11_port1_n10_port0', 'source': 'instance_n10.0.port0.0', 'target': 'instance_n11.0.port1.0'}
+{'link': 'link_n11_port0_n10_port1', 'source': 'instance_n10.0.port1.0', 'target': 'instance_n11.0.port0.0'}
+=== get_graph (YAML) ===
+directed: false
+edges:
+- link: link_n01_port1_n00_port0
+  source: instance_n00.0.port0.0
+  target: instance_n01.0.port1.0
+- link: link_n01_port0_n00_port1
+  source: instance_n00.0.port1.0
+  target: instance_n01.0.port0.0
+- link: link_n10_port3_n00_port2
+  source: instance_n00.0.port2.0
+  target: instance_n10.0.port3.0
+- link: link_n10_port2_n00_port3
+  source: instance_n00.0.port3.0
+  target: instance_n10.0.port2.0
+- link: link_n11_port3_n01_port2
+  source: instance_n01.0.port2.0
+  target: instance_n11.0.port3.0
+- link: link_n11_port2_n01_port3
+  source: instance_n01.0.port3.0
+  target: instance_n11.0.port2.0
+- link: link_n11_port1_n10_port0
+  source: instance_n10.0.port0.0
+  target: instance_n11.0.port1.0
+- link: link_n11_port0_n10_port1
+  source: instance_n10.0.port1.0
+  target: instance_n11.0.port0.0
+graph: {}
+multigraph: false
+nodes:
+- device: n00
+  id: instance_n00.0.port0.0
+  instance: instance_n00
+  instance_idx: 0
+  type: switch
+- device: n00
+  id: instance_n00.0.port1.0
+  instance: instance_n00
+  instance_idx: 0
+  type: switch
+- device: n00
+  id: instance_n00.0.port2.0
+  instance: instance_n00
+  instance_idx: 0
+  type: switch
+- device: n00
+  id: instance_n00.0.port3.0
+  instance: instance_n00
+  instance_idx: 0
+  type: switch
+- device: n01
+  id: instance_n01.0.port0.0
+  instance: instance_n01
+  instance_idx: 0
+  type: switch
+- device: n01
+  id: instance_n01.0.port1.0
+  instance: instance_n01
+  instance_idx: 0
+  type: switch
+- device: n01
+  id: instance_n01.0.port2.0
+  instance: instance_n01
+  instance_idx: 0
+  type: switch
+- device: n01
+  id: instance_n01.0.port3.0
+  instance: instance_n01
+  instance_idx: 0
+  type: switch
+- device: n10
+  id: instance_n10.0.port0.0
+  instance: instance_n10
+  instance_idx: 0
+  type: switch
+- device: n10
+  id: instance_n10.0.port1.0
+  instance: instance_n10
+  instance_idx: 0
+  type: switch
+- device: n10
+  id: instance_n10.0.port2.0
+  instance: instance_n10
+  instance_idx: 0
+  type: switch
+- device: n10
+  id: instance_n10.0.port3.0
+  instance: instance_n10
+  instance_idx: 0
+  type: switch
+- device: n11
+  id: instance_n11.0.port0.0
+  instance: instance_n11
+  instance_idx: 0
+  type: switch
+- device: n11
+  id: instance_n11.0.port1.0
+  instance: instance_n11
+  instance_idx: 0
+  type: switch
+- device: n11
+  id: instance_n11.0.port2.0
+  instance: instance_n11
+  instance_idx: 0
+  type: switch
+- device: n11
+  id: instance_n11.0.port3.0
+  instance: instance_n11
+  instance_idx: 0
+  type: switch

@@ -1,0 +1,53 @@
+Create a 2D torus network topology arranged in a 2x2 grid. Define exactly four nodes:
+- n00 at row 0, col 0
+- n01 at row 0, col 1
+- n10 at row 1, col 0
+- n11 at row 1, col 1
+
+Topology rules:
+- Each node must have exactly 4 interfaces named port0, port1, port2, port3.
+- Every node must connect to its left, right, up, and down neighbor with wrap-around.
+- All ports must be used — no port may remain unconnected.
+- All connections must be point-to-point.
+- No duplicate links and no self-links.
+
+Required neighbor mapping:
+- n00 neighbors: left=n01, right=n01, up=n10, down=n10
+- n01 neighbors: left=n00, right=n00, up=n11, down=n11
+- n10 neighbors: left=n11, right=n11, up=n00, down=n00
+- n11 neighbors: left=n10, right=n10, up=n01, down=n01
+
+Port assignment rules:
+- port0 = horizontal-left neighbor
+- port1 = horizontal-right neighbor
+- port2 = vertical-up neighbor
+- port3 = vertical-down neighbor
+
+Expected connections (explicit):
+- n00.port0 <-> n01.port1
+- n00.port1 <-> n01.port0
+- n00.port2 <-> n10.port3
+- n00.port3 <-> n10.port2
+
+- n01.port0 <-> n00.port1
+- n01.port1 <-> n00.port0
+- n01.port2 <-> n11.port3
+- n01.port3 <-> n11.port2
+
+- n10.port0 <-> n11.port1
+- n10.port1 <-> n11.port0
+- n10.port2 <-> n00.port3
+- n10.port3 <-> n00.port2
+
+- n11.port0 <-> n10.port1
+- n11.port1 <-> n10.port0
+- n11.port2 <-> n01.port3
+- n11.port3 <-> n01.port2
+
+Output format:
+List every link explicitly in the format:
+<node>.portX  <node>.portY
+
+Constraints:
+- The final graph must have no isolated ports.
+- Connectivity must be fully defined (no null graph).
